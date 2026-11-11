@@ -354,6 +354,13 @@ select,textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;pad
 .ncard{display:flex;gap:12px;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.035)}
 .ncard.new{border-color:rgba(255,255,255,.45);background:rgba(255,255,255,.07)}
 .ncard .ava{width:38px;height:38px;font-size:12px}
+.lgreg{border-left:3px solid var(--c);display:grid;gap:8px}.lgreg.mine{box-shadow:0 0 0 1px rgba(255,255,255,.35),0 0 24px -8px rgba(255,255,255,.4)}
+.lgbar span{background:linear-gradient(90deg,rgba(255,255,255,.6),var(--c))}
+.lgrank{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(255,255,255,.35);font:800 13px var(--display);flex:none}.lgrank.sm{width:22px;height:22px;font-size:11px}
+.lgrow{display:flex;align-items:center;gap:8px;padding:7px 6px;border-radius:8px;font-size:13px}.lgrow.mine{background:rgba(255,255,255,.08)}
+.lgdot{width:8px;height:8px;border-radius:50%;flex:none}
+.lgprize{border:1px solid rgba(255,193,92,.45);background:linear-gradient(135deg,rgba(255,193,92,.14),rgba(255,255,255,.03))}
+.lgpts{display:grid;margin-top:6px}.lgpts>div{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px}.lgpts>div:last-child{border:0}
 .kgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .kpi{display:grid;gap:3px;align-content:start}.kpi b{font:800 22px var(--display)}.kpi .pill{justify-self:start}
 .lvbar{display:flex;height:16px;border-radius:5px;overflow:hidden;margin-top:4px;gap:2px}
@@ -478,6 +485,7 @@ button.tstop:disabled{cursor:default}
       <li><button data-go="journey"><span class="tag">Signature</span><span><strong>The train is the classroom</strong><span class="d">Plan a trip in a timetable view. When the train crosses a language border, a challenge for your job arrives.</span></span></button></li>
       <li><button data-go="listen"><span class="tag">Listening</span><span><strong>Announcement lab</strong><span class="d">Station and on-board announcements, Swiss German included. A train moves along the line as you progress.</span></span></button></li>
       <li><button data-go="passport"><span class="tag">Menu · JC</span><span><strong>Language passport</strong><span class="d">CECRL levels, region stamps, and a phone bump to exchange passports when colleagues meet.</span></span></button></li>
+      <li><button data-go="league"><span class="tag">Play</span><span><strong>Region league</strong><span class="d">Romandie, Deutschschweiz and Ticino compete by learning each other's language. Points per active learner, weekly challenges, class duels, and an immersion day for the best class.</span></span></button></li>
       <li><button data-go="tandem"><span class="tag">Immersion</span><span><strong>Tandem and exchange</strong><span class="d">Weekly tandems, same-job pairs with a challenger question, live-in exchanges, and colleagues open to chat on your train.</span></span></button></li>
       <li><button data-go="roleplay"><span class="tag">Practice</span><span><strong>Service role-play</strong><span class="d">Angry, calm and emergency situations per job. Scores how you handle the problem and the language you use.</span></span></button></li>
     </ul>
@@ -608,13 +616,14 @@ const S={tab:'journey',jv:'list',route:0,pos:0,running:false,fired:false,openCha
   pp:0,
   td:'tandem',sent:{},
   rpCat:'all',rp:null,
+  lg:{sec:'regions',add:0,mine:185,streak:12,duel:null},
   qStep:-1};
 let timer=null;
 function stop(){S.running=false;clearInterval(timer)}
 
 /* ================= ROUTER ================= */
-function setTab(t){stop();overlay.innerHTML='';S.tab=t;$('#meBtn').classList.toggle('on',['profile','passport','settings','guide','dash','notebook','words','learn','live'].includes(t));$$('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));render();bell();screen.scrollTop=0}
-function render(){({live:rLive,learn:rLearn,words:rWords,notebook:rNotebook,notif:rNotif,dash:rDash,guide:rGuide,settings:rSettings,school:rSchool,tour:rTour,journey:rJourney,listen:rListen,passport:rPassport,tandem:rTandem,roleplay:rRole,profile:rProfile})[S.tab]();}
+function setTab(t){stop();overlay.innerHTML='';S.tab=t;$('#meBtn').classList.toggle('on',['profile','passport','settings','guide','dash','notebook','words','learn','live','league'].includes(t));$$('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));render();bell();screen.scrollTop=0}
+function render(){({league:rLeague,live:rLive,learn:rLearn,words:rWords,notebook:rNotebook,notif:rNotif,dash:rDash,guide:rGuide,settings:rSettings,school:rSchool,tour:rTour,journey:rJourney,listen:rListen,passport:rPassport,tandem:rTandem,roleplay:rRole,profile:rProfile})[S.tab]();}
 
 /* ================= PROFILE ================= */
 function rProfile(){
@@ -825,6 +834,7 @@ function rTour(){
   screen.innerHTML=`
   <div class="between"><div><div class="label">Swiss Tour · ${LN[l]}</div><h2>Your route through the levels</h2></div><div style="text-align:right"><div style="font:800 26px var(--display)" class="glowtxt">${L}</div><div class="small">${total}/60 cities</div></div></div>
   <p class="sub">The tour is your school. Each level is a line of 10 cities; each city is a unit of 8 short lessons (vocabulary, grammar, listening, speaking, writing) that ends with a fun fact card in the language you learn. Review stops sit between cities, a checkpoint test halfway, and an exam station at the end.</p>
+  <button class="card" id="lgo" style="all:unset;cursor:pointer;box-sizing:border-box;width:100%;display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:linear-gradient(90deg,rgba(111,155,255,.16),rgba(255,255,255,.04));margin-bottom:10px"><span><b>Region league</b><br><span class="small">${S.lg.add>=12?'Romandie leads the season':'Romandie 2nd · 7 pts behind Deutschschweiz'}</span></span><span class="glowtxt" style="font-weight:700">League →</span></button>
   <button class="card" id="rev" style="all:unset;cursor:pointer;box-sizing:border-box;width:100%;display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.07);margin-bottom:14px"><span><b>Review deck</b><br><span class="small">${S.deck.length} words · ${Math.min(6,S.deck.length)} due today · 2 min</span></span><span class="glowtxt" style="font-weight:700">Review →</span></button>
   ${skillsCard()}
   <div class="stack" style="gap:14px">
@@ -866,6 +876,7 @@ function rTour(){
   $$('[data-ts]').forEach(b=>b.onclick=()=>{const [i,j]=b.dataset.ts.split('-').map(Number);unitSheet(i,j)});
   $$('[data-open]').forEach(b=>b.onclick=()=>{const i=+b.dataset.open;S.tourOpen[i]=!S.tourOpen[i];rerender()});
   $('#rev').onclick=reviewSheet;
+  $('#lgo').onclick=()=>setTab('league');
   const tb=$('[data-tbook]');if(tb)tb.onclick=()=>book(l);
   const tp=$('[data-tpass]');if(tp)tp.onclick=()=>{passExam(l);rerender()};
   const tc=$('[data-tcheck]');if(tc)tc.onclick=()=>a1Check(l);
@@ -1206,7 +1217,7 @@ function rLesson(){
 /* ================= ACCOUNT MENU & SETTINGS ================= */
 function openMenu(){
   const L=lvl();
-  const items=[['guide','How the app works','What each tab is for','M12 21a9 9 0 100-18 9 9 0 000 18zM12 16v-4M12 8h.01'],['profile','Your program','Questionnaire, levels and exams','M4 6h16M4 12h10M4 18h7'],['passport','Passport','Levels, stamps, exchange with colleagues','M6 3h12v18H6zM12 7v6M9 10h6'],['settings','Settings','Notifications, languages, privacy','M12 9a3 3 0 100 6 3 3 0 000-6zM12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1'],['live','Live translate','Hear German, read English as it is spoken','M12 3a3 3 0 013 3v6a3 3 0 01-6 0V6a3 3 0 013-3zM5 11a7 7 0 0014 0M12 18v3'],['learn:courses','Online courses','Full CECRL courses in 4 languages','M3 6l9-3 9 3-9 3-9-3zM7 8v5c0 2 2 3 5 3s5-1 5-3V8'],['learn:modules','E-learning modules','Short job modules, oral and written','M4 4h16v12H4zM8 20h8M12 16v4'],['learn:classes','Virtual classes','Live classes with a teacher · book a seat','M3 7h12v10H3zM15 10l6-3v10l-6-3'],['words','My words','Every word you met, with quiz','M4 6h16M4 12h16M4 18h10'],['notebook','My notebook','Grammar of your trip, verbs, PDF','M5 3h12a2 2 0 012 2v16H7a2 2 0 01-2-2V3zM9 7h6M9 11h6M5 17h14'],['dash','Team dashboard','For managers and HR · sample data','M4 20V10M10 20V4M16 20v-7M22 20H2']];
+  const items=[['guide','How the app works','What each tab is for','M12 21a9 9 0 100-18 9 9 0 000 18zM12 16v-4M12 8h.01'],['profile','Your program','Questionnaire, levels and exams','M4 6h16M4 12h10M4 18h7'],['passport','Passport','Levels, stamps, exchange with colleagues','M6 3h12v18H6zM12 7v6M9 10h6'],['league','Region league','Romandie vs Deutschschweiz vs Ticino','M8 4h8v5a4 4 0 01-8 0V4zM8 6H5a3 3 0 003 4M16 6h3a3 3 0 01-3 4M12 13v4M8 20h8M9 17h6'],['settings','Settings','Notifications, languages, privacy','M12 9a3 3 0 100 6 3 3 0 000-6zM12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1'],['live','Live translate','Hear German, read English as it is spoken','M12 3a3 3 0 013 3v6a3 3 0 01-6 0V6a3 3 0 013-3zM5 11a7 7 0 0014 0M12 18v3'],['learn:courses','Online courses','Full CECRL courses in 4 languages','M3 6l9-3 9 3-9 3-9-3zM7 8v5c0 2 2 3 5 3s5-1 5-3V8'],['learn:modules','E-learning modules','Short job modules, oral and written','M4 4h16v12H4zM8 20h8M12 16v4'],['learn:classes','Virtual classes','Live classes with a teacher · book a seat','M3 7h12v10H3zM15 10l6-3v10l-6-3'],['words','My words','Every word you met, with quiz','M4 6h16M4 12h16M4 18h10'],['notebook','My notebook','Grammar of your trip, verbs, PDF','M5 3h12a2 2 0 012 2v16H7a2 2 0 01-2-2V3zM9 7h6M9 11h6M5 17h14'],['dash','Team dashboard','For managers and HR · sample data','M4 20V10M10 20V4M16 20v-7M22 20H2']];
   overlay.innerHTML=`<div class="mscrim" id="mscrim"><div class="menu" role="menu" aria-label="Account menu">
     <div class="mtop"><span class="ava" style="background:var(--red);width:42px;height:42px">JC</span><div><b>Jamie Collins</b><div class="small">${JOBS[P.job].label}</div><div class="small"><span class="glowtxt">${LN[P.target]} ${L||'?'}</span> · ${S.xp} XP</div></div></div>
     ${items.map(([k,t,d,ic])=>`<button class="mitem ${S.tab===k||(S.tab==='learn'&&k==='learn:'+S.lsec)?'on':''}" role="menuitem" data-m="${k}"><svg viewBox="0 0 24 24"><path d="${ic}"/></svg><span><b>${t}</b><span class="small" style="display:block">${d}</span></span></button>`).join('')}
@@ -1250,6 +1261,7 @@ function rSettings(){
 /* ================= NOTIFICATIONS ================= */
 const NOTIF=[
  {id:'vc',kind:'Virtual class',time:'in 25 min',ava:['SB','var(--neon2)'],title:'Your German class starts at 12:15',body:'Lunch class with Sabine: handling a delay at the counter. 5 colleagues, level B1, oral.',acts:[['vclass','Open class']]},
+ {id:'lg',kind:'Region league',time:'1 min',ava:['🏆','var(--fr)'],title:'Romandie is 7 points behind Deutschschweiz',body:'Zürich · Sales, 1st year challenges your class to a duel. 3 questions each, in the language you learn. +30 pts if you win.',acts:[['league','Accept the duel']]},
  {id:'req',kind:'Tandem request',time:'2 min',ava:['AS','var(--de)'],title:'Anna S. wants a weekly tandem with you',body:'Customer service · Olten · speaks Deutsch, learns English B1. Same job as you: +15 match bonus and a challenger question.',acts:[['accept','Accept'],['decline','Not now']]},
  {id:'train',kind:'On your train',time:'5 min',ava:['JK','var(--de)'],title:'Jonas K. is on your IC 1 and open to chat',body:'Coach 6 · train driver from Bern · speaks Deutsch, learns English. Suggested topic: «Wie war deine Schicht heute?»',acts:[['wave','Say hallo'],['tandem','Open Tandem']]},
  {id:'border',kind:'Train challenge',time:'in 6 min',ava:['⇄','var(--neon2)'],title:'Your train enters German-speaking Switzerland after Fribourg',body:'A 2-minute counter challenge in German is ready for when you cross the language border.',acts:[['journey','Open journey']]},
@@ -1280,8 +1292,96 @@ function rNotif(){
   $$('[data-na]').forEach(b=>b.onclick=()=>{const [id,a]=b.dataset.na.split(':');
     const done={accept:'Accepted. First tandem: Thursday 17:10 on the IC 1, coach 4. Added to your calendar.',decline:'Declined politely. Anna can ask again in a month.',wave:'Hallo sent. Jonas answered: «Hallo! Ich bin in Wagen 6, komm vorbei.»',view:'Request forwarded to your team lead for approval.'}[a];
     if(done){S.ndone[id]=done;if(a==='wave')S.sent.wave=1;rerender();return}
-    if(a==='vclass'){S.lsec='classes';setTab('learn');return}if(a==='tandem')setTab('tandem');if(a==='journey')setTab('journey');if(a==='role')setTab('roleplay');if(a==='passport'){S.pp=0;setTab('passport')}if(a==='program'){S.qStep=-1;setTab('profile')}
+    if(a==='vclass'){S.lsec='classes';setTab('learn');return}if(a==='league'){S.lg.sec='classes';setTab('league');return}if(a==='tandem')setTab('tandem');if(a==='journey')setTab('journey');if(a==='role')setTab('roleplay');if(a==='passport'){S.pp=0;setTab('passport')}if(a==='program'){S.qStep=-1;setTab('profile')}
     if(a==='review'){setTab('tour');reviewSheet()}});
+}
+
+/* ================= REGION LEAGUE ================= */
+// Regions are ranked on points per active learner, so a small region (Ticino) can beat a big one.
+const LREG=[
+ {k:'Romandie',l:'FR',learn:'Deutsch · Italiano · English',active:318,of:402,base:431},
+ {k:'Deutschschweiz',l:'DE',learn:'Français · Italiano · English',active:1104,of:1386,base:438},
+ {k:'Ticino',l:'IT',learn:'Deutsch · Français · English',active:241,of:287,base:425}
+];
+const LCLS=[
+ ['Bellinzona · Logistics, 2nd year','IT',612],['Zürich · Sales, 1st year','DE',588],['Genève · Sales','FR',571,1],['Olten · Track construction','DE',549],['Lausanne · Train attendants','FR',530],['Bern · IT, 3rd year','DE',512],['Lugano · Sales, 1st year','IT',497],['Fribourg · Office','FR',463]
+];
+const LCH=[
+ ['Röstigraben week','Each class books 3 tandems with a class on the other side of the language border. Both classes score.',2,3,'tandems','+60 pts','tandem'],
+ ['Announcement sprint','Your class understands 50 announcements in the language it learns.',34,50,'announcements','+40 pts','listen'],
+ ['Dialect Friday','Everyone in the class gets one Swiss German announcement right.',12,18,'colleagues','+25 pts','listen']
+];
+const DUEL=[
+ ['On the departure board: <em>«Der Zug fällt aus.»</em>','The train is cancelled','The train is late','The train is full','<b>ausfallen</b> = to be cancelled. Not to be confused with «Verspätung» (delay).'],
+ ['A traveller comes to your counter. What do you say first?','«Grüezi, was darf es sein?»','«Hallo, was willst du?»','«Was ist los?»','Polite and Swiss: <b>Grüezi</b> and <b>Sie</b> with customers. «Was darf es sein?» = How can I help?'],
+ ['You reassure a customer: <em>«Sie erreichen Ihren Anschluss in Olten.»</em>','They will make their connection in Olten','They must get off in Olten','Their ticket is valid until Olten','<b>der Anschluss</b> = the connection. You will hear it in every announcement.']
+];
+function lgPts(r){return r.base+(r.k==='Romandie'?S.lg.add:0)}
+function rLeague(){
+  const L=S.lg,mine='Romandie';
+  const regs=[...LREG].sort((a,b)=>lgPts(b)-lgPts(a)),top=lgPts(regs[0]);
+  const myRank=regs.findIndex(r=>r.k===mine)+1,gap=lgPts(regs[0])-lgPts(LREG[0]);
+  const cls=LCLS.map(c=>c[3]?[c[0],c[1],c[2]+L.add*2,1]:c).sort((a,b)=>b[2]-a[2]);
+  const seg=[['regions','Regions'],['classes','Classes'],['me','My points']];
+  let body='';
+  if(L.sec==='regions'){
+    body=`<div class="stack" style="gap:10px">${regs.map((r,i)=>`<div class="card lgreg ${r.k===mine?'mine':''}" style="--c:${LC[r.l]}">
+      <div class="between"><span class="row" style="gap:10px"><span class="lgrank">${i+1}</span><span><b>${r.k}</b>${r.k===mine?' <span class="pill">your region</span>':''}<span class="small" style="display:block">learns ${r.learn}</span></span></span><span style="text-align:right"><b style="font:800 22px var(--display)">${lgPts(r)}</b><span class="small" style="display:block">pts / learner</span></span></div>
+      <div class="hbar lgbar"><span style="width:${Math.round(lgPts(r)/top*100)}%"></span></div>
+      <div class="small">${r.active} of ${r.of} learners active this week</div></div>`).join('')}</div>
+    <div class="card" style="margin-top:12px"><div class="label">Fair by design</div>
+      <div class="stack" style="gap:6px;margin-top:8px;font-size:13px">
+        <div>✓ Points per active learner: Ticino can beat Deutschschweiz.</div>
+        <div>✓ Points for effort, not level: an A1 learner scores as much as a B2.</div>
+        <div>✓ You only score in the language of another region.</div>
+        <div>✓ A tandem across the language border scores for both regions.</div></div></div>`;
+  }else if(L.sec==='classes'){
+    body=`<div class="card"><div class="stack" style="gap:4px">${cls.map((c,i)=>`<div class="lgrow ${c[3]?'mine':''}"><span class="lgrank sm">${i+1}</span><i class="lgdot" style="background:${LC[c[1]]}"></i><span style="flex:1;min-width:0">${c[0]}${c[3]?' <span class="pill">you</span>':''}</span><b>${c[2]}</b></div>`).join('')}</div></div>
+    <div class="card" style="margin-top:12px"><div class="between"><div><div class="label">Duel</div><b>Challenge a class from another region</b></div><span class="pill">+30 pts</span></div>
+      <div class="small" style="margin-top:6px">3 questions each, in the language you learn. Zürich · Sales, 1st year answers in French, your class in German. Best score wins.</div>
+      ${L.duel?`<div class="small" style="margin-top:8px;color:var(--good);font-weight:600">${L.duel}</div>`:`<button class="btn" id="duel" style="margin-top:10px;width:100%">Duel Zürich · Sales, 1st year</button>`}</div>`;
+  }else{
+    body=`<div class="kgrid"><div class="card kpi"><b>${L.mine}</b><span class="small">your points this week</span><span class="pill">for Romandie</span></div><div class="card kpi"><b>${L.streak} days</b><span class="small">streak</span><span class="pill">×1.2 bonus</span></div></div>
+    <div class="card" style="margin-top:12px"><div class="label">How you score</div>
+      <div class="lgpts">${[['Lesson in the tour','5'],['City completed','25'],['Train challenge at a language border','40'],['Announcement understood','3'],['Tandem across the language border','50 · both'],['Role-play finished','20'],['Duel won','30']].map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join('')}</div></div>
+    <div class="rule" style="margin-top:12px">Your trainer sees your class score, never your answers or recordings.</div>`;
+  }
+  screen.innerHTML=`
+  <div class="between"><div><div class="label">Season 1 · Winter 2026</div><h2>Region league</h2></div><div style="text-align:right"><div style="font:800 26px var(--display)" class="glowtxt">${myRank===1?'1st':myRank+(myRank===2?'nd':'rd')}</div><div class="small">${myRank===1?'Romandie leads':'Romandie, '+gap+' pts behind'}</div></div></div>
+  <p class="sub">Romandie, Deutschschweiz and Ticino compete by learning each other's language. Every lesson, challenge and tandem scores for your class and your region. The season ends on 20 December.</p>
+  <div class="card lgprize"><b>Prize of the season</b><span class="small" style="display:block;margin-top:3px">The best class wins an immersion day: a trip by train to a class in another region, a day working beside them, a dinner together. The best region gets the cup for its training centre.</span></div>
+  <div class="label" style="margin:14px 0 8px">Challenges this week</div>
+  <div class="stack" style="gap:8px">${LCH.map(([t,d,n,of,u,p,go],i)=>`<div class="card"><div class="between"><b>${t}</b><span class="pill">${p}</span></div><div class="small" style="margin-top:3px">${d}</div><div class="between small" style="margin-top:8px"><span>Your class: ${n}/${of} ${u}</span><button class="btn ghost" data-lgo="${go}" style="padding:5px 10px;font-size:12px">Go →</button></div><div class="hbar"><span style="width:${n/of*100}%"></span></div></div>`).join('')}</div>
+  <div class="seg" style="margin:16px 0 10px" role="group" aria-label="League view">${seg.map(([k,t])=>`<button data-lsec="${k}" aria-pressed="${L.sec===k}">${t}</button>`).join('')}</div>
+  ${body}`;
+  $$('[data-lsec]').forEach(b=>b.onclick=()=>{L.sec=b.dataset.lsec;rerender()});
+  $$('[data-lgo]').forEach(b=>b.onclick=()=>setTab(b.dataset.lgo));
+  const d=$('#duel');if(d)d.onclick=duelSheet;
+}
+function duelSheet(){
+  let n=0,ok=0;
+  function draw(){
+    if(n>=DUEL.length){
+      const them=2,win=ok>them,tie=ok===them;
+      if(win){S.lg.add+=12;S.lg.mine+=30;S.xp+=30}
+      S.lg.duel=win?`Won ${ok}–${them} against Zürich · Sales, 1st year. +30 pts for your class and Romandie.`:tie?`Draw ${ok}–${them}. Rematch possible tomorrow.`:`Lost ${ok}–${them}. Zürich scores this time; rematch tomorrow.`;
+      overlay.innerHTML=`<div class="overlay"><div class="sheet"><div class="label">Duel result</div><div class="big-name glowtxt">${win?'Victory':tie?'Draw':'Close one'}</div>
+        <div class="row" style="gap:10px;justify-content:space-around;text-align:center"><div><b style="font:800 30px var(--display);color:${LC.FR}">${ok}</b><div class="small">Genève · Sales<br>in German</div></div><div class="small">vs</div><div><b style="font:800 30px var(--display);color:${LC.DE}">${them}</b><div class="small">Zürich · Sales<br>in French</div></div></div>
+        <div class="small">${win?'Your points move Romandie up the region ranking.':'Every answer still counts as practice and goes into your review deck.'}</div>
+        <button class="btn" id="dx">Back to the league</button></div></div>`;
+      $('#dx').onclick=()=>{overlay.innerHTML='';rerender()};return}
+    const c=DUEL[n],opts=[[c[1],1],[c[2],0],[c[3],0]].sort(()=>Math.random()-.5);
+    overlay.innerHTML=`<div class="overlay"><div class="sheet" role="dialog" aria-label="Duel">
+      <div class="between"><span class="label">Duel · question ${n+1} of ${DUEL.length}</span><span class="small">Genève ${ok} · Zürich ?</span></div>
+      <div class="q">${c[0]}</div>
+      <div class="opts">${opts.map(([t,o])=>`<button class="opt" data-ok="${o}">${t}</button>`).join('')}</div>
+      <div class="fb" id="fb" aria-live="polite"></div>
+      <button class="btn" id="nx" hidden>${n<DUEL.length-1?'Next question':'See the result'}</button></div></div>`;
+    overlay.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{const r=o.dataset.ok==='1';overlay.querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(x.dataset.ok==='1')x.classList.add('right')});if(!r)o.classList.add('wrong');else ok++;
+      $('#fb').innerHTML=(r?'<b style="color:var(--good)">Correct.</b> ':'<b style="color:var(--bad)">Not quite.</b> ')+c[4];$('#nx').hidden=false;$('#nx').focus()});
+    $('#nx').onclick=()=>{n++;draw()};
+  }
+  draw();
 }
 
 /* ================= TEAM DASHBOARD (managers & HR) ================= */
@@ -1708,7 +1808,7 @@ const GUIDE={
  tandem:['Learn with colleagues: weekly tandems, job-shadow days, live-in exchanges in another region, and colleagues open to chat on your train.','Practise with real people.'],
  roleplay:['Rehearse real service situations: angry or calm customers, incidents, radio calls. You are scored on how you handle the problem and on the language you use.','Get ready for difficult moments.']
 };
-const GUIDE_MENU=[['live','Live translate','Hold the phone near a customer, a colleague or an announcement: the German appears as it is spoken, with the English right after. Reply in English and hear it in German. Swiss German too.'],['learn:courses','Online courses','Complete CECRL courses per language and level: self-paced lessons, a weekly virtual class, exam preparation.'],['learn:modules','E-learning modules','Short job modules (25 to 45 min) for oral and written communication, also available as SCORM packages for the CFF LMS.'],['learn:classes','Virtual classes','Live online classes with partner-school teachers, 6 to 10 colleagues per level. Book a seat, join from the app.'],['words','My words','Every word you met: about 12 per city plus words from Listen, Role-play, Journey and Tandem. Search, filter, hear, mark as known, quiz.'],['notebook','My notebook','Verb tables in four tenses with a conjugation drill, the grammar rules and words from every city of your trip, and a PDF to print or keep.'],['notif','Notifications (bell)','Tandem requests, colleagues on your train, train challenges, reviews due and exam suggestions.'],['dash','Team dashboard','For managers and HR: levels, hours, exam status and skills per team, exports to the LMS. Never shows chats or recordings.'],['profile','Your program','Your answers, your level, and the modules picked for your job. Book official exams here when the app says you are ready.'],['passport','Passport','Your language levels, region stamps and certificates. Bump phones with a colleague to exchange passports.'],['settings','Settings','Daily goal, notifications, Swiss German dialect, and what is shared with CFF.']];
+const GUIDE_MENU=[['live','Live translate','Hold the phone near a customer, a colleague or an announcement: the German appears as it is spoken, with the English right after. Reply in English and hear it in German. Swiss German too.'],['learn:courses','Online courses','Complete CECRL courses per language and level: self-paced lessons, a weekly virtual class, exam preparation.'],['learn:modules','E-learning modules','Short job modules (25 to 45 min) for oral and written communication, also available as SCORM packages for the CFF LMS.'],['learn:classes','Virtual classes','Live online classes with partner-school teachers, 6 to 10 colleagues per level. Book a seat, join from the app.'],['words','My words','Every word you met: about 12 per city plus words from Listen, Role-play, Journey and Tandem. Search, filter, hear, mark as known, quiz.'],['notebook','My notebook','Verb tables in four tenses with a conjugation drill, the grammar rules and words from every city of your trip, and a PDF to print or keep.'],['notif','Notifications (bell)','Tandem requests, colleagues on your train, train challenges, reviews due and exam suggestions.'],['dash','Team dashboard','For managers and HR: levels, hours, exam status and skills per team, exports to the LMS. Never shows chats or recordings.'],['profile','Your program','Your answers, your level, and the modules picked for your job. Book official exams here when the app says you are ready.'],['passport','Passport','Your language levels, region stamps and certificates. Bump phones with a colleague to exchange passports.'],['league','Region league','Romandie, Deutschschweiz and Ticino compete by learning each other\'s language. Weekly challenges, class duels, and an immersion day for the best class.'],['settings','Settings','Daily goal, notifications, Swiss German dialect, and what is shared with CFF.']];
 function rGuide(){
   const tabs=[...document.querySelectorAll('#tabs button')].map(b=>({k:b.dataset.tab,label:b.textContent.trim(),svg:b.querySelector('svg').outerHTML}));
   screen.innerHTML=`
